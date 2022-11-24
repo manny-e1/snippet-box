@@ -5,6 +5,7 @@ import (
 	"flag"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/manny-e1/snippetbox/internal/models"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ type application struct {
 	infoLogger         *log.Logger
 	snippets           *models.SnippetModel
 	transactionExample *models.TransactionExample
+	templateCache      map[string]*template.Template
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -40,6 +42,12 @@ func main() {
 
 	db, err := openDB(*dsn)
 
+	templateCache, err := newTemplateCache()
+
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
+
 	app := &application{
 		errorLogger: errorLogger,
 		infoLogger:  infoLogger,
@@ -47,6 +55,7 @@ func main() {
 			DB: db,
 		},
 		transactionExample: &models.TransactionExample{DB: db},
+		templateCache:      templateCache,
 	}
 
 	if err != nil {
