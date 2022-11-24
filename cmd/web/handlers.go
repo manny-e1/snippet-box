@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/manny-e1/snippetbox/internal/models"
-	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -14,21 +13,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	files := []string{
-		"./ui/html/pages/home.tmpl",
-		"./ui/html/layout/base.tmpl",
-		"./ui/html/partials/footer.tmpl",
-		"./ui/html/partials/nav.tmpl",
-	}
 
 	snippets, err := app.snippets.Latest()
-	if err != nil {
-		app.errorLogger.Println(err.Error())
-		app.serverError(w, err)
-		return
-	}
-
-	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		app.errorLogger.Println(err.Error())
 		app.serverError(w, err)
@@ -39,11 +25,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		Snippets: snippets,
 	}
 
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.errorLogger.Println(err.Error())
-		app.serverError(w, err)
-	}
+	app.render(w, http.StatusOK, "home.tmpl", data)
 }
 func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
@@ -59,26 +41,11 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 			app.serverError(w, err)
 		}
 	}
-	files := []string{
-		"./ui/html/layout/base.tmpl",
-		"./ui/html/partials/nav.tmpl",
-		"./ui/html/pages/view.tmpl",
-		"./ui/html/partials/footer.tmpl",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
 
 	data := &templateData{
 		Snippet: snippet,
 	}
-
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	app.render(w, http.StatusOK, "view.tmpl", data)
 
 }
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
