@@ -4,11 +4,21 @@ import (
 	"github.com/manny-e1/snippetbox/internal/models"
 	"html/template"
 	"path/filepath"
+	"time"
 )
 
 type templateData struct {
-	Snippet  *models.Snippet
-	Snippets []*models.Snippet
+	CurrentYear int
+	Snippet     *models.Snippet
+	Snippets    []*models.Snippet
+}
+
+func humanDate(time time.Time) string {
+	return time.Format("02 Jan 2006 at 15:04")
+}
+
+var functions = template.FuncMap{
+	"humanDate": humanDate,
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -19,7 +29,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 	for _, page := range pages {
 		name := filepath.Base(page)
-		ts, err := template.ParseFiles("./ui/html/layout/base.tmpl")
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/layout/base.tmpl")
 		if err != nil {
 			return nil, err
 		}
