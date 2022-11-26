@@ -1,18 +1,25 @@
 package main
 
-import "net/http"
+import (
+	"github.com/julienschmidt/httprouter"
+	"github.com/justinas/alice"
+	"net/http"
+)
 
 func (app *application) routes() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet", app.showSnippet)
-	mux.HandleFunc("/snippets", app.showSnippets)
-	mux.HandleFunc("/transaction-example", app.transactionTrial)
+	//mux := http.NewServeMux()
+	router := httprouter.New()
 
-	mux.HandleFunc("/snippet/create", app.createSnippet)
+	router.HandlerFunc(http.MethodGet, "/", app.home)
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.showSnippet)
+	router.HandlerFunc(http.MethodGet, "/snippets", app.showSnippets)
+	router.HandlerFunc(http.MethodGet, "/transaction-example", app.transactionTrial)
 
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static/")})
-	mux.Handle("/static", http.NotFoundHandler())
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.createSnippet)
+
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	//mux.Handle("/static", http.NotFoundHandler())
+	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	return standard.Then(router)
 }
