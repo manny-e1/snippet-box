@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/manny-e1/snippetbox/internal/models"
@@ -11,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type application struct {
@@ -20,6 +23,7 @@ type application struct {
 	transactionExample *models.TransactionExample
 	templateCache      map[string]*template.Template
 	formDecoder        *form.Decoder
+	sessionManager     *scs.SessionManager
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -52,6 +56,10 @@ func main() {
 
 	formDecoder := form.NewDecoder()
 
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
 		errorLogger: errorLogger,
 		infoLogger:  infoLogger,
@@ -61,6 +69,7 @@ func main() {
 		transactionExample: &models.TransactionExample{DB: db},
 		templateCache:      templateCache,
 		formDecoder:        formDecoder,
+		sessionManager:     sessionManager,
 	}
 
 	if err != nil {
@@ -76,7 +85,7 @@ func main() {
 		ErrorLog: errorLogger,
 		Addr:     *addr,
 		Handler:  mux}
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLogger.Fatal(err)
 }
 

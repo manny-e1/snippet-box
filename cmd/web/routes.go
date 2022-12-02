@@ -14,17 +14,19 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 
-	router.HandlerFunc(http.MethodGet, "/", app.home)
-	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.showSnippet)
-	router.HandlerFunc(http.MethodGet, "/snippets", app.showSnippets)
-	router.HandlerFunc(http.MethodGet, "/transaction-example", app.transactionTrial)
-
-	router.HandlerFunc(http.MethodGet, "/snippet/create", app.createSnippet)
-	router.HandlerFunc(http.MethodPost, "/snippet/create", app.createSnippetPost)
-
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	//mux.Handle("/static", http.NotFoundHandler())
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
+
+	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
+	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.showSnippet))
+	router.Handler(http.MethodGet, "/snippets", dynamic.ThenFunc(app.showSnippets))
+	router.Handler(http.MethodGet, "/transaction-example", dynamic.ThenFunc(app.transactionTrial))
+	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.createSnippet))
+	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.createSnippetPost))
+
+	//mux.Handle("/static", http.NotFoundHandler())
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	return standard.Then(router)
 }
