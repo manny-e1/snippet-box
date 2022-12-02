@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"github.com/alexedwards/scs/mysqlstore"
@@ -47,6 +48,9 @@ func main() {
 	var errorLogger = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	db, err := openDB(*dsn)
+	if err != nil {
+		errorLogger.Fatal(err)
+	}
 
 	templateCache, err := newTemplateCache()
 
@@ -72,8 +76,8 @@ func main() {
 		sessionManager:     sessionManager,
 	}
 
-	if err != nil {
-		errorLogger.Fatal(err)
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
 
 	defer db.Close()
@@ -82,9 +86,14 @@ func main() {
 	infoLogger.Printf("Starting server on %s ", *addr)
 
 	srv := &http.Server{
-		ErrorLog: errorLogger,
-		Addr:     *addr,
-		Handler:  mux}
+		ErrorLog:     errorLogger,
+		Addr:         *addr,
+		Handler:      mux,
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLogger.Fatal(err)
 }
