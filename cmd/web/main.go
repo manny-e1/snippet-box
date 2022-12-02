@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/go-playground/form"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/manny-e1/snippetbox/internal/models"
 	"html/template"
@@ -18,6 +19,7 @@ type application struct {
 	snippets           *models.SnippetModel
 	transactionExample *models.TransactionExample
 	templateCache      map[string]*template.Template
+	formDecoder        *form.Decoder
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -48,6 +50,8 @@ func main() {
 		errorLogger.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		errorLogger: errorLogger,
 		infoLogger:  infoLogger,
@@ -56,6 +60,7 @@ func main() {
 		},
 		transactionExample: &models.TransactionExample{DB: db},
 		templateCache:      templateCache,
+		formDecoder:        formDecoder,
 	}
 
 	if err != nil {
