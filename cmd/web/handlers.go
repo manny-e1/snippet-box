@@ -17,6 +17,13 @@ type snippetCreateForm struct {
 	validator.Validator `form:"-"`
 }
 
+type userSignupForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	snippets, err := app.snippets.Latest()
 	if err != nil {
@@ -104,16 +111,43 @@ func (app *application) transactionTrial(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (app *application) showSnippets(w http.ResponseWriter, r *http.Request) {
+func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 
-	snippets, err := app.snippets.Latest()
+}
+
+func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Form = userSignupForm{}
+	app.render(w, http.StatusOK, "signup.tmpl", data)
+}
+
+func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+	var form userSignupForm
+	err := app.decodePostForm(r, &form)
+
 	if err != nil {
-		app.errorLogger.Println(err.Error())
-		app.serverError(w, err)
+		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-	for _, snippet := range snippets {
 
-		fmt.Fprintf(w, "%+v", snippet)
+	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This field must be a valid email address")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "This field must be at least 8 characters long")
+
+	if !form.IsValid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		return
 	}
+	fmt.Fprintln(w, "cre")
+}
+func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+
 }

@@ -21,6 +21,7 @@ type application struct {
 	errorLogger        *log.Logger
 	infoLogger         *log.Logger
 	snippets           *models.SnippetModel
+	users              *models.UserModel
 	transactionExample *models.TransactionExample
 	templateCache      map[string]*template.Template
 	formDecoder        *form.Decoder
@@ -70,6 +71,7 @@ func main() {
 		snippets: &models.SnippetModel{
 			DB: db,
 		},
+		users:              &models.UserModel{DB: db},
 		transactionExample: &models.TransactionExample{DB: db},
 		templateCache:      templateCache,
 		formDecoder:        formDecoder,
