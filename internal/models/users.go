@@ -26,13 +26,13 @@ func (um *UserModel) Insert(name, email, password string) error {
 	if err != nil {
 		return err
 	}
-	stmt := `INSERT INTO users (name,email,password,created) 
+	stmt := `INSERT INTO users (name,email,hashed_password,created) 
 			VALUES (?,?,?,UTC_TIMESTAMP())`
 	_, err = um.DB.Exec(stmt, name, email, hashedPwd)
 	if err != nil {
-		var mySQLErr *mysql.MySQLError
-		if errors.As(err, &mySQLErr) {
-			if mySQLErr.Number == 1862 && strings.Contains(mySQLErr.Message, "users_us_email") {
+		var mySQLError *mysql.MySQLError
+		if errors.As(err, &mySQLError) {
+			if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "users_uc_email") {
 				return ErrDuplicateEmail
 			}
 		}
