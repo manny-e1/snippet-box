@@ -63,7 +63,7 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	}
 	err = app.formDecoder.Decode(dst, r.PostForm)
 	if err != nil {
-		var invalidDecodeError *form.Decoder
+		var invalidDecodeError *form.InvalidDecoderError
 
 		if errors.As(err, &invalidDecodeError) {
 			panic(err)
@@ -73,5 +73,9 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 func (app *application) isAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
 }
