@@ -22,6 +22,8 @@ func (app *application) routes() http.Handler {
 	//router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 	//We no longer need to strip the prefix from the request url
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
+	router.Handler(http.MethodGet, "/ping", http.HandlerFunc(Ping))
+
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
