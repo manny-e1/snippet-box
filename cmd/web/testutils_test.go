@@ -2,12 +2,16 @@ package main
 
 import (
 	"bytes"
+	"github.com/alexedwards/scs/v2"
+	"github.com/go-playground/form"
+	"github.com/manny-e1/snippetbox/internal/models/mocks"
 	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 type testServer struct {
@@ -15,9 +19,25 @@ type testServer struct {
 }
 
 func newTestApplication(t *testing.T) *application {
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	formDecoder := form.NewDecoder()
+
+	sessionManger := scs.New()
+	sessionManger.Lifetime = 12 * time.Hour
+	sessionManger.Cookie.Secure = true
+
 	return &application{
-		errorLogger: log.New(io.Discard, "", 0),
-		infoLogger:  log.New(io.Discard, "", 0),
+		errorLogger:    log.New(io.Discard, "", 0),
+		infoLogger:     log.New(io.Discard, "", 0),
+		snippets:       &mocks.SnippetModel{},
+		users:          &mocks.UserModel{},
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManger,
 	}
 }
 
