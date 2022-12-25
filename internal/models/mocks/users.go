@@ -7,7 +7,7 @@ import (
 
 type UserModel struct{}
 
-func (m *UserModel) Insert(name, email, password string) error {
+func (um *UserModel) Insert(name, email, password string) error {
 	switch email {
 	case "dagim@gmail.com":
 		return models.ErrDuplicateEmail
@@ -15,13 +15,13 @@ func (m *UserModel) Insert(name, email, password string) error {
 		return nil
 	}
 }
-func (m *UserModel) Authenticate(email, password string) (int, error) {
+func (um *UserModel) Authenticate(email, password string) (int, error) {
 	if email == "manny@gmail.com" && password == "12345678" {
 		return 1, nil
 	}
 	return 0, models.ErrInvalidCredentials
 }
-func (m *UserModel) Exists(id int) (bool, error) {
+func (um *UserModel) Exists(id int) (bool, error) {
 	switch id {
 	case 1:
 		return true, nil
@@ -43,4 +43,14 @@ func (um *UserModel) Get(id int) (*models.User, error) {
 	default:
 		return nil, models.ErrNoRecord
 	}
+}
+
+func (um *UserModel) PasswordUpdate(id int, currentPassword, newPassword string) error {
+	if id == 1 {
+		if currentPassword != "12345678" {
+			return models.ErrInvalidCredentials
+		}
+		return nil
+	}
+	return models.ErrNoRecord
 }
