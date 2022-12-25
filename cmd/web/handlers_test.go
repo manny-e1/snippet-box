@@ -186,3 +186,58 @@ func TestUserSignup(t *testing.T) {
 	}
 
 }
+
+func TestSnippetCreate(t *testing.T) {
+	app := newTestApplication(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+	_, _, body := ts.get(t, "/user/login")
+	validCsrfToken := extractCSRFToken(t, body)
+
+	tests := []struct {
+		name          string
+		wantCode      int
+		wantLoginCode int
+		wantLocation  string
+		wantBody      string
+		email         string
+		password      string
+		csrfToken     string
+	}{
+		{
+			name:         "Unauthenticated",
+			wantCode:     http.StatusSeeOther,
+			wantLocation: "/user/login",
+		},
+		{
+			name:          "Authenticated",
+			wantCode:      http.StatusOK,
+			wantBody:      "<form action='/snippet/create' method='POST'>",
+			email:         "manny@gmail.com",
+			password:      "12345678",
+			wantLoginCode: http.StatusSeeOther,
+			csrfToken:     validCsrfToken,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.wantBody == "" {
+				code, header, _ := ts.get(t, "/snippet/create")
+				assert.Equal(t, code, test.wantCode)
+				assert.Equal(t, header.Get("Location"), test.wantLocation)
+			} else {
+				form := url.Values{}
+				form.Add("email", test.email)
+				form.Add("password", test.password)
+				form.Add("csrf_token", test.csrfToken)
+				loginStatusCode, _, _ := ts.postForm(t, "/user/login", form)
+				assert.Equal(t, loginStatusCode, test.wantLoginCode)
+
+				authSnippetCreateStatusCode, _, authSnippetCreateBody := ts.get(t, "/snippet/create")
+				assert.Equal(t, authSnippetCreateStatusCode, test.wantCode)
+				assert.StringContains(t, authSnippetCreateBody, test.wantBody)
+
+			}
+		})
+	}
+}
