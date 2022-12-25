@@ -13,6 +13,7 @@ type UserModelInterface interface {
 	Insert(name, email, password string) error
 	Authenticate(email, password string) (int, error)
 	Exists(id int) (bool, error)
+	Get(id int) (*User, error)
 }
 
 type User struct {
@@ -76,4 +77,18 @@ func (um *UserModel) Exists(id int) (bool, error) {
 	stmt := "SELECT EXISTS(SELECT true FROM users WHERE id = ?)"
 	err := um.DB.QueryRow(stmt, id).Scan(&exists)
 	return exists, err
+}
+
+func (um *UserModel) Get(id int) (*User, error) {
+	var user User
+	stmt := "SELECT name, email, created FROM users WHERE id=?"
+	err := um.DB.QueryRow(stmt, id).Scan(&user.Name, &user.Email, &user.Created)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	return &user, nil
 }

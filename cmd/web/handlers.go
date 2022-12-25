@@ -234,8 +234,17 @@ func (app *application) about(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) account(w http.ResponseWriter, r *http.Request) {
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	user, err := app.users.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		} else {
+			app.serverError(w, err)
+			return
+		}
+	}
 	data := app.newTemplateData(r)
-	data.Form = struct {
-	}{}
-	app.render(w, http.StatusOK, "about.tmpl", data)
+	data.CurrentUser = user
+	app.render(w, http.StatusOK, "account.tmpl", data)
 }
