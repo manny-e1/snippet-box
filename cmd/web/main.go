@@ -26,6 +26,7 @@ type application struct {
 	templateCache      map[string]*template.Template
 	formDecoder        *form.Decoder
 	sessionManager     *scs.SessionManager
+	debug              bool
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -42,7 +43,7 @@ func openDB(dsn string) (*sql.DB, error) {
 func main() {
 	addr := flag.String("addr", ":5000", "HTTP Network Address")
 	dsn := flag.String("dsn", "letsgo:LetsGo123!@/snippetbox?parseTime=true", "Mysql datasource name")
-
+	debug := flag.Bool("debug", false, "Starting the server in debug mode")
 	flag.Parse()
 
 	var infoLogger = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -76,6 +77,7 @@ func main() {
 		templateCache:      templateCache,
 		formDecoder:        formDecoder,
 		sessionManager:     sessionManager,
+		debug:              *debug,
 	}
 
 	tlsConfig := &tls.Config{
